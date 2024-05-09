@@ -1,4 +1,6 @@
+import numpy as np
 from ultralytics import YOLO
+from sort import *
 import cv2
 import cvzone
 import math
@@ -17,12 +19,15 @@ class_names = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "tra
               "teddy bear", "hair drier", "toothbrush"
               ]
 
-VIDEO_NAME = "motocikli"
-SHOW_VIDEO = False
+VIDEO_NAME = "riteni"
+SHOW_VIDEO = True
+SHOW_YOLO_BOUNDING_BOXES = False
+SHOW_TRACKER_BOUNDING_BOXES = True
 CONFIDENCE_THRESHOLD = 0.5
 YOLO_MODEL = "yolov8n"
 
 model = YOLO(f'../yolo-weights/{YOLO_MODEL}.pt')
+tracker = Sort(max_age=15, min_hits=2, iou_threshold=0.3)
 cap = cv2.VideoCapture(f'../../object-tracker-shared/videos/{VIDEO_NAME}.mp4')
 out_file_path = f'../../object-tracker-shared/outputs/{VIDEO_NAME}.txt'
 out_file = open(out_file_path, "w")
@@ -42,6 +47,9 @@ while success:
     new_frame_time = time.time()
     frame_count += 1
 
+    # TODO: Fix doubling detections
+    detections_for_tracking = np.empty((0, 6))
+
     for r in results:
         boxes = r.boxes
         for box in boxes:
@@ -57,29 +65,42 @@ while success:
             if conf < CONFIDENCE_THRESHOLD:
                 continue
 
-            if SHOW_VIDEO:
+            current_array = np.array([int(x1), y1, x2, y2, conf, cls])
+            detections_for_tracking = np.vstack((detections_for_tracking, current_array))
+
+            if SHOW_VIDEO and SHOW_YOLO_BOUNDING_BOXES:
                 cvzone.cornerRect(img, (x1, y1, w, h), l=10, t=3)
                 cvzone.putTextRect(
                     img, f'{class_names[cls]} {conf}', (max(0, x1), max(35, y1)),
                     scale=1, offset=2, thickness=1
                 )
 
-            object_class_name = class_names[cls]
-            object_id = 1  # TODO: Add SORT object tracking
-            if object_class_name not in distinct_classes:
-                distinct_classes.append(object_class_name)
-            if not any(el["id"] == object_id for el in distinct_ids):
-                distinct_ids.append({ "id": object_id, "class": object_class_name })
+    # Tracker results
+    tracker_results = tracker.update(detections_for_tracking)
+    for result in tracker_results:
+        x1, y1, x2, y2, object_id, class_id = result
+        x1, y1, x2, y2, object_id, class_id = int(x1), int(y1), int(x2), int(y2), int(object_id), int(class_id)
+        width, height = x2 - x1, y2 - y1
+        object_class = class_names[int(class_id)]
 
-            detected_object = {
-                "id": object_id,
-                "class": object_class_name,
-                "x": x1,
-                "y": y1,
-                "width": w,
-                "height": h,
-            }
-            detections.append(json.dumps(detected_object))
+        if not any(el["id"] == object_id for el in distinct_ids):
+            distinct_ids.append({"id": object_id, "class": object_class})
+
+        detections.append(json.dumps({
+            "id": object_id,
+            "class": object_class,
+            "x": x1,
+            "y": y1,
+            "width": width,
+            "height": height,
+        }))
+
+        if SHOW_VIDEO and SHOW_TRACKER_BOUNDING_BOXES:
+            cvzone.cornerRect(img, (x1, y1, width, height), l=10, t=3)
+            cvzone.putTextRect(
+                img, f'{object_class}, ID: {int(object_id)}', (max(0, x1), max(35, y1)),
+                scale=1, offset=2, thickness=1
+            )
 
     fps = 1 / (new_frame_time - prev_frame_time)
     fps_sum += fps
@@ -101,7 +122,7 @@ out_file.close()
 out_file = open(out_file_path, "r")
 content = out_file.read()
 out_file_w_summary = open(out_file_path, "w")
-out_file_w_summary.write(f'{json.dumps({"fps": video_frame_rate, "classes": distinct_classes, "ids": distinct_ids})}\n')
+out_file_w_summary.write(f'{json.dumps({"fps": video_frame_rate, "ids": distinct_ids})}\n')
 out_file_w_summary.write(content)
 
 # Release memory
