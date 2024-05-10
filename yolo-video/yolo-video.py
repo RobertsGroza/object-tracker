@@ -19,10 +19,10 @@ class_names = ["person", "bicycle", "car", "motorbike", "aeroplane", "bus", "tra
               "teddy bear", "hair drier", "toothbrush"
               ]
 
-VIDEO_NAME = "riteni"
-SHOW_VIDEO = True
+VIDEO_NAME = "testwalk"
+SHOW_VIDEO = False
 SHOW_YOLO_BOUNDING_BOXES = False
-SHOW_TRACKER_BOUNDING_BOXES = True
+SHOW_TRACKER_BOUNDING_BOXES = False
 CONFIDENCE_THRESHOLD = 0.5
 YOLO_MODEL = "yolov8n"
 
