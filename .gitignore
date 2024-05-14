@@ -1,5 +1,5 @@
 venv
 yolo-weights
-yolo-video/videos
-yolo-video/outputs
+yolo-sort/videos
+yolo-sort/outputs
 videos
