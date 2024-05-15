@@ -23,7 +23,6 @@ new_frame_time = 0
 success, frame = cap.read()
 frame_count = 0
 fps_sum = 0
-distinct_classes = []
 distinct_ids = []
 video_frame_rate = cap.get(cv2.CAP_PROP_FPS)
 
