@@ -1,5 +1,5 @@
 venv
-yolo-weights
-yolo-sort/videos
-yolo-sort/outputs
+yolo_weights
+sort/videos
+sort/outputs
 videos
