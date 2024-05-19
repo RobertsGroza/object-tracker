@@ -19,7 +19,7 @@ out_file = open(out_file_path, "w")
 
 video_summary = VideoSummary(cap.get(cv2.CAP_PROP_FPS))
 frame_counter = FPSCounter()
-tracker = Sort(max_age=30, min_hits=2, iou_threshold=0.3)
+tracker = Sort(max_age=30, min_hits=3, iou_threshold=0.3)
 success, frame = cap.read()
 
 while success:
@@ -61,8 +61,9 @@ while success:
                 scale=1, offset=2, thickness=1
             )
 
-    cv2.imshow("Image", frame)
-    cv2.waitKey(1)
+    if SHOW_VIDEO:
+        cv2.imshow("Image", frame)
+        cv2.waitKey(1)
     out_file.write(f'[{", ".join(detections)}]\n')
     success, frame = cap.read()
 

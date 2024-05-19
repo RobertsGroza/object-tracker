@@ -63,8 +63,9 @@ while success:
                     scale=1, offset=2, thickness=1
                 )
 
-    cv2.imshow("Image", frame)
-    cv2.waitKey(1)
+    if SHOW_VIDEO:
+        cv2.imshow("Image", frame)
+        cv2.waitKey(1)
     out_file.write(f'[{", ".join(detections)}]\n')
     success, frame = cap.read()
 
